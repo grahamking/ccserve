@@ -26,13 +26,13 @@
 
 #include "ccgen.h"
 
+#define PORT 1212
+
 const std::string headers {R"MARKER(HTTP/1.0 200 OK
 Connection: close
+Access-Control-Allow-Origin: *
 Content-type: text/html
 Content-length: )MARKER"};
-
-const std::string CONTENT_START {"<!DOCTYPE html><html><body><div id='numbersDiv'>"};
-#define CONTENT_END "</div></body></html>";
 
 void handle_in(unsigned int, const asio::error_code&);
 void handle_out(unsigned int conn_id, const asio::error_code& e, std::size_t size);
@@ -64,11 +64,8 @@ private:
 
 void Conn::write()
 {
-	std::string ccbody {CONTENT_START};
-	ccbody += ccgen();
-	ccbody += CONTENT_END;
-
 	std::string out {headers};
+	std::string ccbody {ccgen()};
 	out += std::to_string(ccbody.size());
 	out += +"\r\n\r\n";
 	out += ccbody;
@@ -98,7 +95,7 @@ public:
 	{
 		std::cout << '[' << now() << "] ccserve start\n";
 
-		asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), 8080);
+		asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), PORT);
 		acceptor.open(endpoint.protocol());
 		acceptor.set_option(asio::ip::tcp::acceptor::reuse_address(true));
 		acceptor.bind(endpoint);

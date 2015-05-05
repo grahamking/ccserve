@@ -1,0 +1,44 @@
+<!DOCTYPE>
+<html>
+<head>
+	<title>Test page</title>
+	<style>
+	p { clear: both; }
+	div.creditCardNumbers {
+		float: left;
+		width: 11.5em;
+		padding-top: 0;
+	}
+	div.creditCardNumbers h3 {
+		font-style: bold;
+		font-size: 1em;
+		margin: 0;
+		padding: 0;
+	}
+	div.creditCardSet {
+		clear: both;
+	}
+	</style>
+</head>
+
+<body>
+	<h1>ccserve test page</h1>
+	<p><b>The numbers should appear below.</b></p>
+	<div id="numbersDiv"></div>
+	<p><b>The number should appear above.</b></p>
+
+	<script type="text/javascript">
+	document.addEventListener('DOMContentLoaded', function () {
+		xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4 && xhr.status == 200) {
+				document.getElementById('numbersDiv').innerHTML = xhr.responseText;
+			}
+		};
+		xhr.open('GET', 'http://127.0.0.1:1212', true);
+		xhr.send();
+	});
+	</script>
+
+</body>
+</html>
