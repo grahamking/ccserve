@@ -24,57 +24,15 @@
 
 #include <asio.hpp>
 
-std::string out;
+#include "ccgen.h"
 
 const std::string headers {R"MARKER(HTTP/1.0 200 OK
 Connection: close
 Content-type: text/html
 Content-length: )MARKER"};
 
-const std::string content {R"MARKER(<!DOCTYPE html>
-<html><body>
-<div id="numbersDiv">
-<div class='creditCardSet'>
-	<div class='creditCardNumbers'><br />
-		<h3>Mastercard</h3><br />5510978629215764<br />5377283329436915<br />5223001620946705<br />5162734568762022<br />5126259350981932<br />5565711499020335<br />5594993197961797<br />5440040243672253<br />5120024211172972<br />5133184124368938<br />
-	</div>
-	<div class='creditCardNumbers'><br />
-		<h3>VISA 16 digit</h3><br />4695878849181921<br />4716890140524118<br />4539098848939951<br />4556398950841997<br />4916663762657443<br />4539436640530133<br />4485638904279018<br />4556687337967008<br />4024007158538685<br />4024007131004383<br />
-	</div>
-</div>
-<div class='creditCardSet'>
-	<div class='creditCardNumbers'><br />
-		<h3>VISA 13 digit</h3><br />4556640215536<br />4556223181220<br />4485836776327<br />4929792015105<br />4024007197920<br />
-	</div>
-	<div class='creditCardNumbers'><br />
-		<h3>American Express</h3><br />379305723365546<br />374736700089078<br />370229635368720<br />342799262843943<br />348595508894144<br />
-	</div>
-</div>
-<div class='creditCardSet'>
-	<div class='creditCardNumbers'><br />
-		<h3>Discover</h3><br />6011725068867122<br />6011064916876436<br />6011215730513122<br />
-	</div>
-	<div class='creditCardNumbers'><br />
-		<h3>Diners Club</h3><br />30257288352263<br />30146672898629<br />30347138711600<br />
-	</div>
-</div>
-<div class='creditCardSet'>
-	<div class='creditCardNumbers'><br />
-		<h3>enRoute</h3><br />201413782828497<br />201438901826064<br />201410292352869<br />
-	</div>
-	<div class='creditCardNumbers'><br />
-		<h3>JCB</h3><br />3554846796835833<br />3575271692884238<br />3500154001797525<br />
-	</div>
-</div>
-<div class='creditCardSet'>
-	<div class='creditCardNumbers'><br />
-		<h3>Voyager</h3><br />869945911283873<br />869976999509756<br />869976555308650<br />
-	</div>
-</div>
-</div>
-</body></html>
-
-)MARKER"};
+const std::string CONTENT_START {"<!DOCTYPE html><html><body><div id='numbersDiv'>"};
+#define CONTENT_END "</div></body></html>";
 
 void handle_in(unsigned int, const asio::error_code&);
 void handle_out(unsigned int conn_id, const asio::error_code& e, std::size_t size);
@@ -106,6 +64,15 @@ private:
 
 void Conn::write()
 {
+	std::string ccbody {CONTENT_START};
+	ccbody += ccgen();
+	ccbody += CONTENT_END;
+
+	std::string out {headers};
+	out += std::to_string(ccbody.size());
+	out += +"\r\n\r\n";
+	out += ccbody;
+
 	asio::async_write(
 		sock,
 		asio::buffer(out),
@@ -197,7 +164,6 @@ void handle_out(unsigned int conn_id, const asio::error_code& e, std::size_t siz
 
 int main()
 {
-	out = headers + std::to_string(content.size()) +"\r\n\r\n" + content;
 	try
 	{
 		asio::io_service io;
