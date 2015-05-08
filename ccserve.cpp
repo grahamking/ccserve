@@ -49,9 +49,9 @@ void now(std::array<char, 20>& out) {
 class Conn {
 public:
 	Conn(unsigned int conn_id, asio::io_service& io) : sock(io), id(conn_id) { };
+	~Conn() { sock.close(); }
 	void read();
 	void write();
-	void close() { sock.close(); };
 	asio::ip::tcp::socket& get_socket() { return sock; };
 private:
 	asio::ip::tcp::socket sock;
@@ -103,12 +103,19 @@ public:
 		accept_next();
 	}
 
+	~Tcp_server() // is this ever called?
+	{
+		asio::error_code ec;
+		acceptor.close(ec);
+		if (ec) { std::cerr << "Error closing acceptor: " << ec << std::endl; }
+	}
+
 	void accept_next() {
 		unsigned int cid = next_conn_id;
 		next_conn_id = ++next_conn_id % std::numeric_limits<int>::max();
 		auto res = conns.emplace(
 			cid,
-			new Conn(cid, acceptor.get_io_service())
+			std::make_unique<Conn>(cid, acceptor.get_io_service())
 		);
 		auto iter = res.first;
 		acceptor.async_accept(
@@ -122,15 +129,14 @@ public:
 	void write_conn(const unsigned int conn_id) { conns[conn_id]->write(); }
 
 	void close(const unsigned int conn_id) {
-		Conn* c = conns[conn_id];
-		c->close();
-		delete c;
+		// this should make the unique_ptr go out of scope,
+		// calling Conn's destructor, which closes the socket.
 		conns.erase(conn_id);
 	}
 
 private:
 	asio::ip::tcp::acceptor acceptor;
-	std::unordered_map<unsigned int, Conn*> conns;
+	std::unordered_map<unsigned int, std::unique_ptr<Conn>> conns;
 	unsigned int next_conn_id;
 };
 
