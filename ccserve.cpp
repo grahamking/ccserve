@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <ctime>
 #include <string>
+#include <array>
 
 #include <asio.hpp>
 
@@ -39,14 +40,10 @@ void handle_out(unsigned int conn_id, const asio::error_code& e, std::size_t siz
 void done(const unsigned int, const asio::error_code&, std::size_t);
 
 const char* time_format {"%Y-%m-%dT%H:%M:%S"};
-std::string now() {
+void now(std::array<char, 20>& out) {
 	std::time_t t = std::time(nullptr);
 	std::tm tm = *std::localtime(&t);
-	char* now = new char[20];
-	std::strftime(now, 20, time_format, &tm);
-	std::string s {now};
-	delete[] now;
-	return s;
+	std::strftime(out.begin(), 20, time_format, &tm);
 }
 
 class Conn {
@@ -91,9 +88,11 @@ class Tcp_server
 {
 public:
 	Tcp_server(asio::io_service& io)
-		: acceptor(io)
+		: acceptor(io), conns(32), next_conn_id(0)
 	{
-		std::cout << '[' << now() << "] ccserve start\n";
+		std::array<char, 20> nowout;
+		now(nowout);
+		std::cout << '[' << nowout.begin() << "] ccserve start\n";
 
 		asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), PORT);
 		acceptor.open(endpoint.protocol());
