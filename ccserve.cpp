@@ -22,6 +22,7 @@
 #include <ctime>
 #include <string>
 #include <array>
+#include <functional>
 
 #include <asio.hpp>
 
@@ -115,7 +116,7 @@ public:
 		next_conn_id = ++next_conn_id % std::numeric_limits<int>::max();
 		auto res = conns.emplace(
 			cid,
-			std::make_unique<Conn>(cid, acceptor.get_io_service())
+			std::make_unique<Conn>(cid, (asio::io_context&)acceptor.get_executor().context())
 		);
 		auto iter = res.first;
 		acceptor.async_accept(
