@@ -1,0 +1,45 @@
+For C++ 14.
+
+Dependencies: asio-devel (which pulls in Boost), clang, glibc-devel (which you probably already have).
+
+If you're on C++11 (CentOS 7) here's a diff:
+```
+diff --git a/Makefile b/Makefile
+index 9525c21..07d60cb 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,9 +1,9 @@
+ all: ccgen.cpp ccserve.cpp
+-       clang++ -pthread ccgen.cpp ccserve.cpp -Ofast -Wall -std=c++14 -o ccserve
++       clang++ -pthread ccgen.cpp ccserve.cpp -Ofast -Wall -std=c++11 -o ccserve
+
+ # comment in the main func in ccgen first
+ ccgen: ccgen.cpp
+-       clang++ -pthread ccgen.cpp -Ofast -Wall -std=c++14 -o ccgen
++       clang++ -pthread ccgen.cpp -Ofast -Wall -std=c++11 -o ccgen
+
+ bench:
+        ./ccserve &
+diff --git a/ccserve.cpp b/ccserve.cpp
+index 7be2eed..d7f710c 100644
+--- a/ccserve.cpp
++++ b/ccserve.cpp
+@@ -116,7 +116,7 @@ public:
+                next_conn_id = ++next_conn_id % std::numeric_limits<int>::max();
+                auto res = conns.emplace(
+                        cid,
+-                       std::make_unique<Conn>(cid, (asio::io_context&)acceptor.get_executor().context())
++                       std::unique_ptr<Conn>(new Conn(cid, acceptor.get_io_service()))
+                );
+                auto iter = res.first;
+                acceptor.async_accept(
+@@ -170,7 +170,7 @@ int main()
+        try
+        {
+                asio::io_service io;
+-               server = std::make_unique<Tcp_server>(io);
++               server = std::unique_ptr<Tcp_server>(new Tcp_server(io));
+                io.run();
+        }
+        catch (std::exception& e)
+```
